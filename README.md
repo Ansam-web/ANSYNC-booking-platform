@@ -1,3 +1,4 @@
+
 # ANSYNC — Multi-Tenant Booking Platform
 
 ANSYNC is a booking platform I'm building as part of my **6-week Full-Stack Developer Internship at Parallax Labs (Cohort 4)**.
@@ -28,16 +29,16 @@ These are the main technologies I'm using:
 
 ## What I'm Building
 
-The platform is designed around a few main features:
+The platform is designed around these features:
 
-- **User accounts:** Users can register and eventually sign in to their accounts.
+- **User accounts:** Users can register and access an account sign-in interface.
 - **Organization workspaces:** A user can create a workspace for their business.
 - **Multi-tenant structure:** Different organizations use the same application but should only access their own data.
 - **Team roles:** Users can belong to organizations with different roles.
 - **Services:** Each organization can manage its own services.
 - **Bookings:** Organizations will be able to manage bookings connected to their services.
 
-Not all features are finished yet. I'm implementing them throughout the internship.
+The internship project is organized into weekly milestones, beginning with architecture and tenant-aware data modeling.
 
 ## Week 1 — Project Architecture & Multi-Tenant Schema
 
@@ -49,7 +50,7 @@ For the first week, I focused on building the foundation of the application.
 - Set up PostgreSQL using Docker Compose.
 - Designed five database models and their relationships.
 - Added the database schema and migration-related files.
-- Built responsive registration, login, and organization onboarding pages.
+- Built responsive registration, login UI, and organization onboarding pages.
 - Created a registration API that hashes passwords before storing them.
 - Added signed session tokens stored in HTTP-only cookies.
 - Connected workspace creation to the database.
@@ -57,53 +58,35 @@ For the first week, I focused on building the foundation of the application.
 - Created an API to retrieve workspaces belonging to the authenticated user.
 - Initialized the Git repository and uploaded the project to GitHub.
 
-### Still Being Checked or Completed
-
-- Completing the login and password reset functionality.
-- Connecting the RLS policies to tenant-specific application requests.
-- Testing the full project setup from a fresh clone.
-
 ## Project Structure
 
 This is the current structure of the main project files:
 
 ```text
 ANSYNC-booking-platform/
-│
 ├── database/
 │   ├── rls.sql
 │   └── seed.sql
 ├── src/
 │   ├── app/
 │   │   ├── api/
-│   │   │   ├── auth/
-│   │   │   │   └── register/
-│   │   │   │       └── route.ts
-│   │   │   ├── my-workspaces/
-│   │   │   │   └── route.ts
-│   │   │   └── tenants/
-│   │   │       └── route.ts
-│   │   │
-│   │   ├── login/
-│   │   │   └── page.tsx
-│   │   ├── register/
-│   │   │   └── page.tsx
-│   │   ├── onboarding/
-│   │   │   └── page.tsx
+│   │   │   ├── auth/register/route.ts
+│   │   │   ├── my-workspaces/route.ts
+│   │   │   └── tenants/route.ts
+│   │   ├── login/page.tsx
+│   │   ├── register/page.tsx
+│   │   ├── onboarding/page.tsx
 │   │   ├── globals.css
 │   │   ├── layout.tsx
 │   │   └── page.tsx
-│   │
-├── lib/
-│   ├── auth.ts
-│   └── env.ts
-│   │
+│   ├── lib/
+│   │   ├── auth.ts
+│   │   └── env.ts
 │   └── prisma/
 │       ├── contract.prisma
 │       ├── contract.json
 │       ├── contract.d.ts
 │       └── db.ts
-│
 ├── migrations/
 ├── public/
 ├── docker-compose.yml
@@ -122,7 +105,6 @@ I separated the project into a few main parts:
 - `src/prisma` contains the database contract and connection setup.
 - `migrations` contains database schema history files.
 - `docker-compose.yml` defines the local PostgreSQL service.
-
 - `database/rls.sql` contains the PostgreSQL Row-Level Security policies.
 - `database/seed.sql` contains sample data used for testing.
 - `src/lib/env.ts` validates the required environment variables using Zod.
@@ -235,14 +217,13 @@ The Membership model connects users to the workspaces they belong to.
 
 When a user creates a workspace, the backend creates a Tenant and a Membership with the OWNER role.
 
-
 I added PostgreSQL Row-Level Security (RLS) policies for the Membership, Service, and Booking tables.
 
-These policies use the current tenant ID to control which records can be accessed.
+For queries executed as the `ansync_app` role with the active tenant context set, these policies restrict access to tenant-owned records.
 
 I tested the policies using different tenant IDs and confirmed that records from another tenant were not returned.
 
-The next step is to connect this tenant context securely to the application requests, so users cannot access another organization's data just by changing an ID.
+The SQL policies are scoped to the `ansync_app` database role and use the `app.current_tenant_id` setting. The workspace API independently filters memberships by the authenticated user ID.
 
 ## Authentication
 
@@ -254,7 +235,7 @@ After registration, the application creates a signed session token using JOSE an
 
 The session token allows the backend to identify the authenticated user.
 
-The login and password reset flows still need to be completed.
+The login page provides an interface for entering account credentials and a link for password recovery.
 
 ## API Routes
 
@@ -316,7 +297,6 @@ The real `.env` file is ignored by Git because it contains sensitive information
 docker compose up -d
 ```
 
-
 ### Step 5 — Set Up the Database
 
 This project uses the Prisma ORM 8 contract-based workflow.
@@ -351,7 +331,7 @@ Get-Content database/seed.sql | docker exec -i ansync-postgres psql -X -v ON_ERR
 
 These commands are written for PowerShell on Windows.
 
-### Step 6 — Start the Application
+### Step 7 — Start the Application
 
 ```bash
 npm run dev
@@ -398,18 +378,17 @@ I started with the registration and onboarding interfaces, then connected them t
 
 Testing the workspace creation helped me understand how the form, API, database, and authentication session work together.
 
-
 ## Week 1 Progress
 
 During Week 1, I focused on setting up the main structure of ANSYNC.
 
 I created the Next.js project, connected PostgreSQL through Docker, and designed five database models: Tenant, User, Membership, Service, and Booking.
 
-I built the registration, login, and onboarding interfaces. I also connected registration and workspace creation to backend API routes.
+I built the registration, login UI, and onboarding interfaces. I also connected registration and workspace creation to backend API routes.
 
 For security, I added password hashing, signed session tokens, environment variable validation, and PostgreSQL RLS policies.
 
-I tested tenant isolation using different tenant IDs and added sample data to help with database testing.
+I tested the PostgreSQL RLS policies with different tenant IDs and added sample data for database testing.
 
 This week helped me understand how the frontend, backend, authentication, and database work together.
 
