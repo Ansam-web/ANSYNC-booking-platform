@@ -1,0 +1,62 @@
+// use prisma-8
+
+model Tenant {
+  id          Int          @id @default(autoincrement())
+  name        String
+  slug        String       @unique
+  createdAt   DateTime     @default(now())
+  memberships Membership[]
+  services    Service[]
+  bookings    Booking[]
+}
+
+model User {
+  id          Int          @id @default(autoincrement())
+  name        String
+  email       String       @unique
+  passwordHash String
+  createdAt   DateTime     @default(now())
+  memberships Membership[]
+  bookings    Booking[]
+}
+
+model Membership {
+  id        Int      @id @default(autoincrement())
+  tenantId  Int
+  userId    Int
+  role      String   @default("MEMBER")
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([tenantId, userId])
+}
+
+model Service {
+  id          Int       @id @default(autoincrement())
+  tenantId    Int
+  name        String
+  description String?
+  duration    Int
+  price       Float?
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+  bookings    Booking[]
+
+  @@unique([id, tenantId])
+}
+
+model Booking {
+  id        Int      @id @default(autoincrement())
+  tenantId  Int
+  userId    Int
+  serviceId Int
+  startTime DateTime
+  endTime   DateTime
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  service   Service  @relation(fields: [serviceId, tenantId], references: [id, tenantId])
+
+  @@index([tenantId, startTime])
+}
