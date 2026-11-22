@@ -1,89 +1,180 @@
 # ANSYNC — Multi-Tenant Booking Platform
 
-ANSYNC is a multi-tenant SaaS booking platform built as part of the **Parallax Labs Full-Stack Developer Internship (Cohort 4)**.
+ANSYNC is a booking platform I'm building as part of my **6-week Full-Stack Developer Internship at Parallax Labs (Cohort 4)**.
 
-The platform is designed to help organizations manage their own workspaces, users, services, and bookings while keeping tenant data separated.
+The idea behind ANSYNC is to create one application that different businesses can use to manage their bookings, while keeping each business's data separate.
+
+For example, a photography studio and a beauty salon could both use ANSYNC, but each business would have its own workspace, services, and bookings.
+
+I'm developing the project step by step, starting with the database structure, authentication, and organization setup.
 
 ## Tech Stack
 
-- **Frontend:** Next.js 16, React, TypeScript, Tailwind CSS
-- **Backend:** Next.js App Router API Routes
-- **Database:** PostgreSQL 16
-- **ORM:** Prisma ORM 8
-- **Validation:** Zod
-- **Authentication:** bcryptjs for password hashing and JOSE for signed session tokens
-- **Infrastructure:** Docker Compose
-- **Version Control:** Git and GitHub
+These are the main technologies I'm using:
+
+| Technology | Why I'm using it |
+|---|---|
+| Next.js 16 | To build the frontend and backend in the same project |
+| React | To create reusable UI components |
+| TypeScript | To make the code easier to maintain and catch type errors |
+| Tailwind CSS | To build responsive interfaces |
+| PostgreSQL 16 | To store users, organizations, services, and bookings |
+| Prisma ORM 8 | To define the database models and work with PostgreSQL |
+| Docker Compose | To run PostgreSQL locally |
+| Zod | To validate incoming data |
+| bcryptjs | To hash user passwords before saving them |
+| JOSE | To create and verify signed session tokens |
+| Git & GitHub | To track changes and submit my work |
+
+## What I'm Building
+
+The platform is designed around a few main features:
+
+- **User accounts:** Users can register and eventually sign in to their accounts.
+- **Organization workspaces:** A user can create a workspace for their business.
+- **Multi-tenant structure:** Different organizations use the same application but should only access their own data.
+- **Team roles:** Users can belong to organizations with different roles.
+- **Services:** Each organization can manage its own services.
+- **Bookings:** Organizations will be able to manage bookings connected to their services.
+
+Not all features are finished yet. I'm implementing them throughout the internship.
 
 ## Week 1 — Project Architecture & Multi-Tenant Schema
 
-### Implemented
+For the first week, I focused on building the foundation of the application.
 
-- Next.js project setup with TypeScript and Tailwind CSS
-- Dockerized PostgreSQL database
-- Multi-tenant relational database schema
-- Database schema snapshots and migration files
-- Responsive registration, login, and organization onboarding interfaces
-- Registration API with password hashing
-- Signed authentication session cookies
-- Organization creation with an OWNER membership
-- API endpoint for retrieving the authenticated user's workspaces
+### What I've Implemented
 
-### Remaining Verification
+- Created the Next.js project using TypeScript and Tailwind CSS.
+- Set up PostgreSQL using Docker Compose.
+- Designed five database models and their relationships.
+- Added the database schema and migration-related files.
+- Built responsive registration, login, and organization onboarding pages.
+- Created a registration API that hashes passwords before storing them.
+- Added signed session tokens stored in HTTP-only cookies.
+- Connected workspace creation to the database.
+- Added an OWNER membership when a user creates a workspace.
+- Created an API to retrieve workspaces belonging to the authenticated user.
+- Initialized the Git repository and uploaded the project to GitHub.
 
-- Environment variable validation using Zod
-- Tenant isolation enforcement using PostgreSQL RLS or application-level RBAC
-- Database seed data and reproducible setup
-- Login and password-reset functionality
-- Final verification of Week 1 deliverables
+### Still Being Checked or Completed
+
+- Environment variable validation using Zod.
+- Tenant data isolation using RLS or RBAC.
+- Database seed data.
+- Completing login and password reset functionality.
+- Testing the full setup from a clean environment.
 
 ## Project Structure
 
-```text
-src/
-├── app/
-│   ├── api/
-│   │   ├── auth/
-│   │   │   └── register/
-│   │   ├── my-workspaces/
-│   │   └── tenants/
-│   ├── login/
-│   ├── register/
-│   └── onboarding/
-├── lib/
-│   └── auth.ts
-└── prisma/
-    ├── contract.prisma
-    └── db.ts
+This is the current structure of the main project files:
 
-migrations/
-docker-compose.yml
-prisma.config.ts
-.env.example
+```text
+ANSYNC-booking-platform/
+│
+├── src/
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── auth/
+│   │   │   │   └── register/
+│   │   │   │       └── route.ts
+│   │   │   ├── my-workspaces/
+│   │   │   │   └── route.ts
+│   │   │   └── tenants/
+│   │   │       └── route.ts
+│   │   │
+│   │   ├── login/
+│   │   │   └── page.tsx
+│   │   ├── register/
+│   │   │   └── page.tsx
+│   │   ├── onboarding/
+│   │   │   └── page.tsx
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   │
+│   ├── lib/
+│   │   └── auth.ts
+│   │
+│   └── prisma/
+│       ├── contract.prisma
+│       ├── contract.json
+│       ├── contract.d.ts
+│       └── db.ts
+│
+├── migrations/
+├── public/
+├── docker-compose.yml
+├── prisma.config.ts
+├── postcss.config.mjs
+├── next.config.ts
+├── package.json
+├── .env.example
+└── README.md
 ```
+
+I separated the project into a few main parts:
+
+- `src/app` contains the pages and API routes.
+- `src/lib` contains shared logic, such as authentication helpers.
+- `src/prisma` contains the database contract and connection setup.
+- `migrations` contains database schema history files.
+- `docker-compose.yml` defines the local PostgreSQL service.
+
+This structure makes it easier for me to find files and keep the frontend, backend, and database code organized.
 
 ## Database Design
 
-ANSYNC uses five core models:
+I chose PostgreSQL because the platform has several related types of data.
 
-| Model | Purpose |
-|---|---|
-| Tenant | Represents an organization or workspace |
-| User | Stores registered user accounts |
-| Membership | Connects users to tenants and assigns roles |
-| Service | Represents a service belonging to a tenant |
-| Booking | Stores bookings linked to a tenant, user, and service |
+The database currently contains five main models.
 
-### Entity Relationship Diagram
+### 1. Tenant
+
+A tenant represents an organization or business using ANSYNC.
+
+Each tenant has a unique `slug`, which can be used as part of its workspace address.
+
+### 2. User
+
+The User model stores account information, including the user's name, email, and hashed password.
+
+### 3. Membership
+
+Membership connects users to organizations.
+
+I decided to keep Membership separate from User because one user might belong to more than one organization.
+
+For example, someone could be an OWNER in one workspace and a MEMBER in another.
+
+Each membership has a role and connects one user to one tenant.
+
+### 4. Service
+
+Each service belongs to a specific tenant.
+
+Services contain information such as their name, duration, description, and optional price.
+
+### 5. Booking
+
+A booking connects a user to a service and a tenant.
+
+It includes a start time, end time, and booking status.
+
+I also used a composite relationship between `serviceId` and `tenantId` to help prevent bookings from referencing services belonging to another tenant.
+
+## Entity Relationship Diagram (ERD)
+
+This diagram shows how the five models are connected.
 
 ```mermaid
 erDiagram
     TENANT ||--o{ MEMBERSHIP : has
-    USER ||--o{ MEMBERSHIP : joins
+    USER ||--o{ MEMBERSHIP : belongs_to
     TENANT ||--o{ SERVICE : owns
     TENANT ||--o{ BOOKING : contains
     USER ||--o{ BOOKING : makes
-    SERVICE ||--o{ BOOKING : receives
+    SERVICE ||--o{ BOOKING : has
 
     TENANT {
         int id PK
@@ -128,108 +219,165 @@ erDiagram
     }
 ```
 
-### Multi-Tenant Architecture
+## How Multi-Tenancy Works
 
-Each organization is represented by a `Tenant`.
+The main idea is that different businesses share the same application, but their data should stay separated.
 
-Users can belong to multiple organizations through the `Membership` model.
+For this, I added `tenantId` to the Service and Booking models.
 
-Services and bookings contain a `tenantId`, allowing the application to associate records with their respective organizations.
+The Membership model connects users to the workspaces they belong to.
 
-The booking schema also includes a composite relationship between `serviceId` and `tenantId`, helping ensure that a booking references a service belonging to the same tenant.
+When a user creates a workspace, the backend creates a Tenant and a Membership with the OWNER role.
 
-Application-level authorization and tenant isolation enforcement require final verification.
+I'm also working on enforcing tenant isolation at the application or database level, so users cannot access another organization's data just by changing an ID.
 
-## Local Development Setup
+## Authentication
 
-### Prerequisites
+For registration, the backend validates the submitted data and checks whether the email is already registered.
+
+Passwords are hashed using bcryptjs before being stored in PostgreSQL.
+
+After registration, the application creates a signed session token using JOSE and stores it in an HTTP-only cookie.
+
+The session token allows the backend to identify the authenticated user.
+
+The login and password reset flows still need to be completed.
+
+## API Routes
+
+These are the API endpoints implemented so far:
+
+| Method | Endpoint | Description |
+|---|---|---|
+| POST | `/api/auth/register` | Creates a new user account |
+| POST | `/api/tenants` | Creates a new workspace and its OWNER membership |
+| GET | `/api/my-workspaces` | Returns workspaces associated with the authenticated user |
+
+The API routes use server-side validation and database queries.
+
+More endpoints will be added as the project develops.
+
+## How to Run the Project Locally
+
+### Requirements
+
+Before starting, make sure you have:
 
 - Node.js and npm
 - Docker Desktop
 - Git
 
-### 1. Clone the repository
+### Step 1 — Clone the Repository
 
 ```bash
 git clone https://github.com/Ansam-web/ANSYNC-booking-platform.git
 cd ANSYNC-booking-platform
 ```
 
-### 2. Install dependencies
+### Step 2 — Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 3. Configure environment variables
+### Step 3 — Set Up Environment Variables
 
-Copy `.env.example` to `.env` and configure:
+Create a `.env` file based on `.env.example`.
+
+The project requires:
 
 ```env
 DATABASE_URL="postgresql://ansync:YOUR_PASSWORD@localhost:5432/ansync_db"
-SESSION_SECRET="REPLACE_WITH_A_SECURE_RANDOM_SECRET_OF_AT_LEAST_32_CHARACTERS"
+SESSION_SECRET="REPLACE_WITH_A_RANDOM_SECRET_AT_LEAST_32_CHARACTERS_LONG"
 ```
 
-Use the PostgreSQL credentials configured in `docker-compose.yml`.
+The PostgreSQL username, password, and database name must match the values configured in `docker-compose.yml`.
 
-Never commit actual credentials or session secrets.
+The session secret should be a randomly generated value, not the example shown above.
 
-### 4. Start PostgreSQL
+The real `.env` file is ignored by Git because it contains sensitive information.
+
+### Step 4 — Start PostgreSQL
 
 ```bash
 docker compose up -d
 ```
 
-### 5. Initialize the database
+### Step 5 — Set Up the Database
 
-The project uses the Prisma ORM 8 contract-based workflow.
+This project uses the Prisma ORM 8 contract-based workflow.
 
-After configuring the database connection, initialize the database schema:
+To generate the database contract:
 
 ```bash
 npx prisma contract emit
+```
+
+To initialize the database schema:
+
+```bash
 npx prisma db init
 ```
 
-Database migration and seed procedures will be finalized as part of the Week 1 verification.
+The database setup and seed process will be reviewed before the Week 1 submission.
 
-### 6. Start the development server
+### Step 6 — Start the Application
 
 ```bash
 npm run dev
 ```
 
-Open http://localhost:3000 in your browser.
+Then open:
 
-### Application Pages
+http://localhost:3000
 
-- `/register` — Create an account
-- `/login` — Login interface
-- `/onboarding` — Create an organization workspace
+### Available Pages
 
-### API Endpoints
+| Page | URL |
+|---|---|
+| Home | `/` |
+| Register | `/register` |
+| Login | `/login` |
+| Organization Setup | `/onboarding` |
 
-- `POST /api/auth/register` — Register a new user
-- `POST /api/tenants` — Create a workspace
-- `GET /api/my-workspaces` — Retrieve workspaces associated with the current user
+## Challenges I Faced
 
-## Security Considerations
+During the first week, I ran into a few problems while setting up the project.
 
-- Passwords are hashed before database storage.
-- Session tokens are signed.
-- Authentication cookies use the `HttpOnly` attribute.
-- Workspace creation requires an authenticated user.
-- Tenant ownership is represented through membership roles.
-- Tenant isolation enforcement remains subject to final verification.
+**1. Next.js development server**
 
-## Development Roadmap
+At one point, I had multiple development servers running, which caused port conflicts and made debugging confusing.
 
-This repository will be updated throughout the six-week Parallax Labs internship.
+I learned how to identify the running server and manage the terminals more carefully.
 
-Each week's deliverables will be developed and documented in the same repository.
+**2. Tailwind CSS**
+
+The application pages were loading without their expected styling.
+
+I checked the Tailwind and PostCSS setup and fixed the configuration so the styles were applied correctly.
+
+**3. Prisma ORM 8**
+
+The Prisma version I installed uses a different workflow from many older tutorials.
+
+I had to understand the contract-based setup, generate the contract files, and work with the available database API.
+
+**4. Connecting the frontend to the backend**
+
+I started with the registration and onboarding interfaces, then connected them to API routes and PostgreSQL.
+
+Testing the workspace creation helped me understand how the form, API, database, and authentication session work together.
+
+## Next Steps
+
+Before finishing Week 1, I want to complete and verify the required foundation, especially tenant isolation, environment validation, and database setup.
+
+The following weeks will focus on expanding the booking platform based on the internship roadmap.
 
 ## Author
 
-**Ansam — Full-Stack Developer Intern**
+**Ansam**
 
-Parallax Labs, Cohort 4.
+Full-Stack Developer Intern — Parallax Labs, Cohort 4
+
+GitHub: https://github.com/Ansam-web
