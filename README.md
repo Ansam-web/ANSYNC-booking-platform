@@ -50,7 +50,8 @@ For the first week, I focused on building the foundation of the application.
 - Set up PostgreSQL using Docker Compose.
 - Designed five database models and their relationships.
 - Added the database schema and migration-related files.
-- Built responsive registration, login UI, and organization onboarding pages.
+- Built responsive registration, login, password recovery UI, and organization onboarding pages.
+- Implemented login authentication with password verification and signed session cookies.
 - Created a registration API that hashes passwords before storing them.
 - Added signed session tokens stored in HTTP-only cookies.
 - Connected workspace creation to the database.
@@ -71,9 +72,11 @@ ANSYNC-booking-platform/
 │   ├── app/
 │   │   ├── api/
 │   │   │   ├── auth/register/route.ts
+│   │   │   ├── auth/login/route.ts
 │   │   │   ├── my-workspaces/route.ts
 │   │   │   └── tenants/route.ts
 │   │   ├── login/page.tsx
+│   │   ├── forgot-password/page.tsx
 │   │   ├── register/page.tsx
 │   │   ├── onboarding/page.tsx
 │   │   ├── globals.css
@@ -235,7 +238,7 @@ After registration, the application creates a signed session token using JOSE an
 
 The session token allows the backend to identify the authenticated user.
 
-The login page provides an interface for entering account credentials and a link for password recovery.
+The login API verifies account credentials and creates an authenticated session. The password recovery page provides a responsive form with email validation.
 
 ## API Routes
 
@@ -246,6 +249,7 @@ These are the API endpoints implemented so far:
 | POST | `/api/auth/register` | Creates a new user account |
 | POST | `/api/tenants` | Creates a new workspace and its OWNER membership |
 | GET | `/api/my-workspaces` | Returns workspaces associated with the authenticated user |
+| POST | `/api/auth/login` | Authenticates users and creates a session |
 
 The API routes use server-side validation and database queries.
 
@@ -349,6 +353,7 @@ http://localhost:3000
 | Register | `/register` |
 | Login | `/login` |
 | Organization Setup | `/onboarding` |
+| Forgot Password | `/forgot-password` |
 
 ## Challenges I Faced
 
