@@ -59,11 +59,9 @@ For the first week, I focused on building the foundation of the application.
 
 ### Still Being Checked or Completed
 
-- Environment variable validation using Zod.
-- Tenant data isolation using RLS or RBAC.
-- Database seed data.
-- Completing login and password reset functionality.
-- Testing the full setup from a clean environment.
+- Completing the login and password reset functionality.
+- Connecting the RLS policies to tenant-specific application requests.
+- Testing the full project setup from a fresh clone.
 
 ## Project Structure
 
@@ -72,6 +70,9 @@ This is the current structure of the main project files:
 ```text
 ANSYNC-booking-platform/
 │
+├── database/
+│   ├── rls.sql
+│   └── seed.sql
 ├── src/
 │   ├── app/
 │   │   ├── api/
@@ -93,8 +94,9 @@ ANSYNC-booking-platform/
 │   │   ├── layout.tsx
 │   │   └── page.tsx
 │   │
-│   ├── lib/
-│   │   └── auth.ts
+├── lib/
+│   ├── auth.ts
+│   └── env.ts
 │   │
 │   └── prisma/
 │       ├── contract.prisma
@@ -120,6 +122,10 @@ I separated the project into a few main parts:
 - `src/prisma` contains the database contract and connection setup.
 - `migrations` contains database schema history files.
 - `docker-compose.yml` defines the local PostgreSQL service.
+
+- `database/rls.sql` contains the PostgreSQL Row-Level Security policies.
+- `database/seed.sql` contains sample data used for testing.
+- `src/lib/env.ts` validates the required environment variables using Zod.
 
 This structure makes it easier for me to find files and keep the frontend, backend, and database code organized.
 
@@ -229,7 +235,14 @@ The Membership model connects users to the workspaces they belong to.
 
 When a user creates a workspace, the backend creates a Tenant and a Membership with the OWNER role.
 
-I'm also working on enforcing tenant isolation at the application or database level, so users cannot access another organization's data just by changing an ID.
+
+I added PostgreSQL Row-Level Security (RLS) policies for the Membership, Service, and Booking tables.
+
+These policies use the current tenant ID to control which records can be accessed.
+
+I tested the policies using different tenant IDs and confirmed that records from another tenant were not returned.
+
+The next step is to connect this tenant context securely to the application requests, so users cannot access another organization's data just by changing an ID.
 
 ## Authentication
 
@@ -303,23 +316,40 @@ The real `.env` file is ignored by Git because it contains sensitive information
 docker compose up -d
 ```
 
+
 ### Step 5 — Set Up the Database
 
 This project uses the Prisma ORM 8 contract-based workflow.
 
-To generate the database contract:
+Generate the database contract:
 
 ```bash
 npx prisma contract emit
 ```
 
-To initialize the database schema:
+Initialize the database schema:
 
 ```bash
 npx prisma db init
 ```
 
-The database setup and seed process will be reviewed before the Week 1 submission.
+### Step 6 — Apply RLS Policies and Seed Data
+
+The project includes SQL files for tenant isolation and sample data.
+
+Apply the RLS policies using the database administrator:
+
+```powershell
+Get-Content database/rls.sql | docker exec -i ansync-postgres psql -X -v ON_ERROR_STOP=1 -U ansync -d ansync_db
+```
+
+Insert the sample data:
+
+```powershell
+Get-Content database/seed.sql | docker exec -i ansync-postgres psql -X -v ON_ERROR_STOP=1 -U ansync -d ansync_db
+```
+
+These commands are written for PowerShell on Windows.
 
 ### Step 6 — Start the Application
 
@@ -368,15 +398,20 @@ I started with the registration and onboarding interfaces, then connected them t
 
 Testing the workspace creation helped me understand how the form, API, database, and authentication session work together.
 
+
 ## Week 1 Progress
 
-For Week 1, I worked on the main foundation of ANSYNC. I set up the Next.js project, connected PostgreSQL using Docker, and created the database models for tenants, users, memberships, services, and bookings.
+During Week 1, I focused on setting up the main structure of ANSYNC.
 
-I also built the registration and organization onboarding pages and connected them to backend API routes.
+I created the Next.js project, connected PostgreSQL through Docker, and designed five database models: Tenant, User, Membership, Service, and Booking.
 
-To support multi-tenancy, I added PostgreSQL Row-Level Security (RLS) policies for tenant-specific tables and tested how the database behaves with different tenant IDs.
+I built the registration, login, and onboarding interfaces. I also connected registration and workspace creation to backend API routes.
 
-I added environment variable validation using Zod and created SQL seed data for testing.
+For security, I added password hashing, signed session tokens, environment variable validation, and PostgreSQL RLS policies.
+
+I tested tenant isolation using different tenant IDs and added sample data to help with database testing.
+
+This week helped me understand how the frontend, backend, authentication, and database work together.
 
 ## Next Steps
 
