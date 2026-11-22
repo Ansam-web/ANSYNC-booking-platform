@@ -9,7 +9,7 @@ export default function LoginPage() {
           href="/"
           className="text-2xl font-extrabold tracking-tight text-[#5145CD]"
         >
-          Bookora<span className="text-[#A78BFA]">.</span>
+          ANSYNC<span className="text-[#A78BFA]">.</span>
         </Link>
 
         <div className="mt-10">
