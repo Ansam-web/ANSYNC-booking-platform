@@ -368,11 +368,19 @@ I started with the registration and onboarding interfaces, then connected them t
 
 Testing the workspace creation helped me understand how the form, API, database, and authentication session work together.
 
+## Week 1 Progress
+
+For Week 1, I worked on the main foundation of ANSYNC. I set up the Next.js project, connected PostgreSQL using Docker, and created the database models for tenants, users, memberships, services, and bookings.
+
+I also built the registration and organization onboarding pages and connected them to backend API routes.
+
+To support multi-tenancy, I added PostgreSQL Row-Level Security (RLS) policies for tenant-specific tables and tested how the database behaves with different tenant IDs.
+
+I added environment variable validation using Zod and created SQL seed data for testing.
+
 ## Next Steps
 
-Before finishing Week 1, I want to complete and verify the required foundation, especially tenant isolation, environment validation, and database setup.
-
-The following weeks will focus on expanding the booking platform based on the internship roadmap.
+In the coming weeks, I plan to continue building the booking features, improve the dashboard, and add more functionality based on the internship roadmap.
 
 ## Author
 
