@@ -1,18 +1,13 @@
 
 import { SignJWT, jwtVerify } from "jose";
+import { getServerEnv } from "@/lib/env";
 
 const SESSION_COOKIE = "ansync_session";
 
 function getSessionSecret() {
-  const secret = process.env.SESSION_SECRET;
+  const { SESSION_SECRET } = getServerEnv();
 
-  if (!secret || secret.length < 32) {
-    throw new Error(
-      "SESSION_SECRET must contain at least 32 characters"
-    );
-  }
-
-  return new TextEncoder().encode(secret);
+  return new TextEncoder().encode(SESSION_SECRET);
 }
 
 export async function createSessionToken(userId: number) {
