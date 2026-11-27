@@ -1,4 +1,3 @@
-
 # ANSYNC — Multi-Tenant Booking Platform
 
 ANSYNC is a booking platform I'm building as part of my **6-week Full-Stack Developer Internship at Parallax Labs (Cohort 4)**.
@@ -25,6 +24,10 @@ These are the main technologies I'm using:
 | Zod | To validate incoming data |
 | bcryptjs | To hash user passwords before saving them |
 | JOSE | To create and verify signed session tokens |
+| FullCalendar | Interactive calendar views |
+| Sonner | Toast notifications |
+| node-postgres (pg) | Tenant-scoped SQL transactions |
+| Postman | API testing and documentation |
 | Git & GitHub | To track changes and submit my work |
 
 ## What I'm Building
@@ -50,8 +53,7 @@ For the first week, I focused on building the foundation of the application.
 - Set up PostgreSQL using Docker Compose.
 - Designed five database models and their relationships.
 - Added the database schema and migration-related files.
-- Built responsive registration, login, password recovery UI, and organization onboarding pages.
-- Implemented login authentication with password verification and signed session cookies.
+- Built responsive registration, login UI, and organization onboarding pages.
 - Created a registration API that hashes passwords before storing them.
 - Added signed session tokens stored in HTTP-only cookies.
 - Connected workspace creation to the database.
@@ -71,12 +73,16 @@ ANSYNC-booking-platform/
 ├── src/
 │   ├── app/
 │   │   ├── api/
-│   │   │   ├── auth/register/route.ts
 │   │   │   ├── auth/login/route.ts
+│   │   │   ├── bookings/route.ts
+│   │   │   ├── bookings/[bookingId]/route.ts
+│   │   │   ├── services/route.ts
+│   │   │   ├── auth/register/route.ts
 │   │   │   ├── my-workspaces/route.ts
 │   │   │   └── tenants/route.ts
+│   │   ├── dashboard/page.tsx
+│   │   ├── dashboard/bookings/page.tsx
 │   │   ├── login/page.tsx
-│   │   ├── forgot-password/page.tsx
 │   │   ├── register/page.tsx
 │   │   ├── onboarding/page.tsx
 │   │   ├── globals.css
@@ -84,6 +90,7 @@ ANSYNC-booking-platform/
 │   │   └── page.tsx
 │   ├── lib/
 │   │   ├── auth.ts
+│   │   ├── tenant-db.ts
 │   │   └── env.ts
 │   └── prisma/
 │       ├── contract.prisma
@@ -238,7 +245,7 @@ After registration, the application creates a signed session token using JOSE an
 
 The session token allows the backend to identify the authenticated user.
 
-The login API verifies account credentials and creates an authenticated session. The password recovery page provides a responsive form with email validation.
+The login page provides an interface for entering account credentials and a link for password recovery.
 
 ## API Routes
 
@@ -249,11 +256,10 @@ These are the API endpoints implemented so far:
 | POST | `/api/auth/register` | Creates a new user account |
 | POST | `/api/tenants` | Creates a new workspace and its OWNER membership |
 | GET | `/api/my-workspaces` | Returns workspaces associated with the authenticated user |
-| POST | `/api/auth/login` | Authenticates users and creates a session |
 
 The API routes use server-side validation and database queries.
 
-More endpoints will be added as the project develops.
+See the Week 2 API reference below for additional endpoints.
 
 ## How to Run the Project Locally
 
@@ -286,6 +292,7 @@ The project requires:
 
 ```env
 DATABASE_URL="postgresql://ansync:YOUR_PASSWORD@localhost:5432/ansync_db"
+TENANT_DATABASE_URL="postgresql://ansync_app:YOUR_APP_ROLE_PASSWORD@localhost:5432/ansync_db"
 SESSION_SECRET="REPLACE_WITH_A_RANDOM_SECRET_AT_LEAST_32_CHARACTERS_LONG"
 ```
 
@@ -335,7 +342,11 @@ Get-Content database/seed.sql | docker exec -i ansync-postgres psql -X -v ON_ERR
 
 These commands are written for PowerShell on Windows.
 
-### Step 7 — Start the Application
+### Step 7 — Week 2 Database Setup
+
+Ensure the restricted `ansync_app` login role exists with the required table and sequence privileges and a password matching `TENANT_DATABASE_URL`. Apply the Week 2 idempotency SQL script in `database/` using the same PowerShell/psql approach above and its actual repository filename. This creates the `BookingIdempotency` table and its RLS policy.
+
+### Step 8 — Start the Application
 
 ```bash
 npm run dev
@@ -353,7 +364,8 @@ http://localhost:3000
 | Register | `/register` |
 | Login | `/login` |
 | Organization Setup | `/onboarding` |
-| Forgot Password | `/forgot-password` |
+| Dashboard | `/dashboard` |
+| Bookings | `/dashboard/bookings` |
 
 ## Challenges I Faced
 
@@ -397,9 +409,114 @@ I tested the PostgreSQL RLS policies with different tenant IDs and added sample 
 
 This week helped me understand how the frontend, backend, authentication, and database work together.
 
+## Week 2 — Booking APIs & Calendar UI
+
+During Week 2, I extended the application foundation into a working booking management dashboard.
+
+### Implemented Features
+
+- Login with bcrypt credential verification and HTTP-only session cookies.
+- Booking creation, listing, details, rescheduling and deletion.
+- Workspace selection and service retrieval.
+- FullCalendar month, week and day views, plus a booking list.
+- Booking forms with client-side and server-side validation.
+- Responsive dashboard with booking totals and status summaries.
+- Toast notifications, manual retry and session-expiry handling.
+
+### API Reference
+
+Protected routes use the session cookie obtained through login. Booking endpoints return errors in the format `{ "error": { "code": "...", "message": "..." } }`. Authentication and workspace endpoints may instead return a top-level `message`.
+
+| Method | Endpoint | Purpose | Success |
+|---|---|---|---|
+| POST | `/api/auth/login` | Authenticate and set session cookie | 200 |
+| GET | `/api/my-workspaces` | Retrieve accessible workspaces | 200 |
+| GET | `/api/services?tenantId=3` | Retrieve workspace services | 200 |
+| GET | `/api/bookings?tenantId=3` | List bookings | 200 |
+| POST | `/api/bookings` | Create an idempotent booking | 201 |
+| GET | `/api/bookings/{bookingId}?tenantId=3` | Booking details | 200 |
+| PATCH | `/api/bookings/{bookingId}?tenantId=3` | Reschedule booking | 200 |
+| DELETE | `/api/bookings/{bookingId}?tenantId=3` | Delete booking | 200 |
+
+Example creation request (replace IDs and choose an available future time):
+
+```http
+POST /api/bookings
+Content-Type: application/json
+Idempotency-Key: example-unique-key
+```
+
+```json
+{"tenantId":3,"serviceId":2,"startTime":"2027-12-01T10:00:00.000Z"}
+```
+
+PATCH accepts a JSON body containing `startTime` in ISO 8601 format and preserves the existing booking duration.
+
+### Idempotency and Conflict Prevention
+
+POST requires an `Idempotency-Key` of at most 128 characters. The server normalizes the start time and hashes the request using SHA-256. Successful responses are stored in `BookingIdempotency`, keyed by tenant, user and request key. Repeating the same request returns the original response without creating a duplicate; reusing the key with different data returns 409.
+
+Creation and mutations acquire the same tenant-scoped PostgreSQL advisory transaction lock. The backend checks for overlapping non-cancelled bookings before inserting or rescheduling. Adjacent bookings are allowed. Booking creation and its saved idempotency response are committed together.
+
+### Tenant Isolation and Authorization
+
+The API verifies the session and workspace membership. The `withTenant` helper uses a restricted database connection, sets `app.current_tenant_id` within a transaction, and commits or rolls back before releasing the connection. RLS provides an additional tenant boundary. Only workspace owners or the user who owns a booking can reschedule or delete it, subject to membership checks. Cancelled bookings cannot be rescheduled.
+
+Week 2 adds the supporting `BookingIdempotency` table with composite primary key (`tenantId`, `userId`, `key`), request hash, saved response body/status and creation timestamp. The Week 1 ERD above describes the five core models.
+
+### Error Handling
+
+| Status | Meaning |
+|---|---|
+| 400 | Invalid input or missing idempotency key |
+| 401 | Missing or invalid session |
+| 403 | Unauthorized workspace or booking operation |
+| 404 | Booking or service not found |
+| 409 | Booking or idempotency conflict |
+| 500 | Unexpected server error |
+
+The dashboard displays toast notifications and a manual retry action. Missing or expired sessions trigger a redirect to login.
+
+### Postman Testing
+
+Import `ANSYNC.postman_collection.json` into Postman. Start the local database and application, set `baseUrl` to `http://localhost:3000`, enter test credentials locally, and configure `forbiddenTenantId` to an existing workspace the test user cannot access. Use a workspace with at least one service. Run the collection in order with one iteration. Login uses the Postman cookie jar; the unauthorized test must run without the session cookie. Never commit real credentials or session cookies.
+
+| Test | Expected status |
+|---|---|
+| Login | 200 |
+| My workspaces | 200 |
+| Services | 200 |
+| List bookings | 200 |
+| Create booking | 201 |
+| Replay same key | 201 |
+| Key conflict | 409 |
+| Overlap conflict | 409 |
+| Booking details | 200 |
+| Update booking | 200 |
+| Invalid input | 400 |
+| Cross-tenant access | 403 |
+| Delete test booking | 200 |
+| Verify deletion | 404 |
+| Unauthorized access | 401 |
+
+All 15 requests passed in my reported local test run. The collection creates and deletes a test booking; its idempotency record remains.
+
+### Challenges and Lessons
+
+I worked through calendar styling and dependency compatibility, mobile layout adjustments, database availability and session handling. Testing the API separately helped distinguish authentication and database errors from frontend rendering issues.
+
+### Final Verification
+
+```bash
+npx tsc --noEmit
+npm run build
+```
+
+Run both checks before submitting changes.
+
 ## Next Steps
 
-In the coming weeks, I plan to continue building the booking features, improve the dashboard, and add more functionality based on the internship roadmap.
+In the coming weeks, I plan to extend the platform according to the remaining internship milestones.
 
 ## Author
 
@@ -408,3 +525,18 @@ In the coming weeks, I plan to continue building the booking features, improve t
 Full-Stack Developer Intern — Parallax Labs, Cohort 4
 
 GitHub: https://github.com/Ansam-web
+
+## Additional Setup and Authentication Notes
+
+- The login API (`POST /api/auth/login`) verifies account credentials and creates an authenticated session using a signed HTTP-only cookie.
+- The password recovery page (`/forgot-password`) provides a responsive form with email validation. Password reset functionality is not yet implemented.
+
+### Week 2 Database Setup
+
+After applying the initial database schema and RLS policies, run the Week 2 idempotency SQL script:
+
+```powershell
+Get-Content database/week2-idempotency.sql | docker exec -i ansync-postgres psql -X -v ON_ERROR_STOP=1 -U ansync -d ansync_db
+```
+
+This script creates the BookingIdempotency table, configures its Row-Level Security policy, and grants the required database permissions.
